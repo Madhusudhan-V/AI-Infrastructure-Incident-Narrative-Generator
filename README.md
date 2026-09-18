@@ -1,36 +1,28 @@
 # AI-Powered Infrastructure Incident Narrative Generator
 
-**Author / Project Lead:** Madhusudhan V  
-**Project:** Final Year Capstone  
-**Team:** 4 members (member details to be added later)
+Project Lead: Madhusudhan V
+
+Team: Madhusudhan V, Lifda Nashan, Nishmitha-Krishna, Kalpithaa
 
 ## Overview
-A local, explainable incident-analysis platform that consumes a live application log, detects suspicious/error events, correlates them into incidents, reconstructs a timeline, and generates a human-readable incident narrative.
+A local-first incident intelligence platform that watches infrastructure logs, detects failures and anomaly bursts, correlates related events into incidents, reconstructs evidence-backed timelines, generates an AI-assisted incident narrative, persists incidents, and presents an operations dashboard.
 
-## Demo flow
-`Live Log Generator → Log Watcher → Rule/Anomaly Detector → Incident Manager → Timeline → Narrative Generator → Streamlit Dashboard + Notification`
+## Architecture
+Live Logs -> Parser -> Rule and Statistical Detection -> Incident Correlation -> Timeline -> AI Narrative -> SQLite -> Streamlit Dashboard -> Analyst Review
 
-## Design goals
-- Works locally without a paid LLM API.
-- Rule-based detection is the deterministic baseline.
-- Optional anomaly detection can be enabled later.
-- Narrative generation has a deterministic fallback and optional Ollama integration.
-- Every incident keeps evidence from the original log events.
+## Demo
+Terminal 1:
+python -m src.log_generator.live_log_generator --interval 2 --incident-every 25 --scenario database
 
-## Run
-```bash
-python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\\Scripts\\activate
-pip install -r requirements.txt
-python -m src.log_generator.live_log_generator
-# in another terminal
-streamlit run src/dashboard/app.py
-```
+Terminal 2:
+PYTHONPATH=. streamlit run src/dashboard/app.py
 
-The dashboard tails `data/sample_logs/application.log`. Use **Inject Demo Incident** in the dashboard to append a controlled failure sequence.
+Use the dashboard incident button for a controlled failure. Other simulator scenarios are database, network, auth, and resource.
 
-## Project owner
-**Madhusudhan V**
+## AI
+The narrative layer supports a local Ollama model. If Ollama is unavailable, the application produces an evidence-based deterministic report.
 
-## Team
-See `team/TEAM.md`. Four placeholders are intentionally provided so the remaining members can be added later.
+## Two-month engineering scope
+Foundation; detection; correlation and persistence; local AI; HDFS research and evaluation; dashboard productization; testing; final report and demonstration.
+
+See docs/roadmap.md and team/TEAM.md.
