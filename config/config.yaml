@@ -1,0 +1,8 @@
+log_file: data/sample_logs/application.log
+poll_interval_seconds: 0.5
+incident_window_seconds: 30
+severity_threshold: ERROR
+ollama:
+  enabled: false
+  base_url: http://localhost:11434
+  model: llama3.2:3b
