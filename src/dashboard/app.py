@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from src.core.ai import generate
 from src.core.detector import parse_and_detect
 from src.core.incident_engine import IncidentEngine
-from src.core.storage import init, save
+from src.core.storage import init, load, save
 from src.log_generator.live_log_generator import inject_incident
 
 ROOT = Path(__file__).resolve().parents[2]
