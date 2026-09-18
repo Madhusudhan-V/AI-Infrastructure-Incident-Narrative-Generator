@@ -9,6 +9,17 @@ class IncidentEngine:
         self.incidents = []
         self._counter = 0
 
+    def restore(self, incidents):
+        """Restore persisted incidents and continue incident numbering."""
+        self.incidents = list(incidents or [])
+        numbers = []
+        for incident in self.incidents:
+            try:
+                numbers.append(int(str(incident["id"]).split("-")[-1]))
+            except (KeyError, ValueError):
+                continue
+        self._counter = max(numbers, default=0)
+
     @staticmethod
     def _timestamp(value):
         try:
@@ -17,8 +28,6 @@ class IncidentEngine:
             return None
 
     def add(self, event):
-        # WARN/INFO signals remain visible in the event stream but do not
-        # independently create incidents. Actionable incidents begin at ERROR.
         if not event or not event.detected or event.severity < 2:
             return None
 
@@ -45,9 +54,7 @@ class IncidentEngine:
         if same:
             current["events"].append(event.__dict__)
             current["severity"] = max(current["severity"], event.severity)
-            current["confidence"] = max(
-                current["confidence"], event.confidence
-            )
+            current["confidence"] = max(current["confidence"], event.confidence)
             current["updated_at"] = event.timestamp
             return current, False
 
