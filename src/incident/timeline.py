@@ -1,2 +1,2 @@
-def build_timeline(incident):
-    return [{"timestamp":e["timestamp"],"level":e["level"],"message":e["message"]} for e in incident.get("events",[])]
+"""Compatibility wrapper for evidence-backed incident timelines."""
+from src.core.incident_intelligence import build_timeline
