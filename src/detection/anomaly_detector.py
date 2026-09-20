@@ -2,7 +2,8 @@
 
 The detector learns rolling healthy baselines with Isolation Forest. Metric
 types are modelled separately so missing CPU/latency values are not treated
-as synthetic numeric anomalies.
+as synthetic numeric anomalies. A candidate event is scored against the
+existing baseline before it can update that baseline.
 """
 import re
 from collections import defaultdict, deque
@@ -49,7 +50,7 @@ class InfrastructureAnomalyDetector:
         self.models_by_signature = {}
 
     def update(self, event):
-        """Return a result dict describing whether the event is anomalous."""
+        """Score an event against its existing healthy baseline."""
         features = extract_features(event)
         if features is None:
             return {
@@ -69,12 +70,12 @@ class InfrastructureAnomalyDetector:
         else:
             severity = 0
 
-        # Only healthy/non-error observations train the baseline.
-        if severity < 2:
-            self.samples_by_signature[signature].append(values)
-
         samples = self.samples_by_signature[signature]
+
+        # Warm the baseline before a model is available.
         if len(samples) < self.min_samples:
+            if severity < 2:
+                samples.append(values)
             return {
                 "available": False,
                 "anomaly": False,
@@ -98,6 +99,12 @@ class InfrastructureAnomalyDetector:
         # Convert the signed decision score into a bounded anomaly score.
         # This is a confidence-like score, not a probability.
         score = max(0.0, min(1.0, 0.5 - raw_score))
+
+        # Only healthy, non-error, non-anomalous observations update the
+        # baseline. The candidate itself must never train the model before
+        # being scored, and anomalies are deliberately excluded from it.
+        if severity < 2 and not anomaly:
+            samples.append(values)
 
         return {
             "available": True,
