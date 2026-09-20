@@ -25,7 +25,7 @@ def test_detection_latency():
 
 
 def test_grouping_and_grounding():
-    assert grouping_accuracy(["A", "A", "B"], ["A", "A", "C"]) == 2 / 3
+    assert grouping_accuracy(["A", "A", "B"], ["A", "A", "C"]) == 0.6667
     assert narrative_grounding_score(
         "database connection pool exhausted; requests failed",
         ["database connection pool exhausted", "requests failed"],
