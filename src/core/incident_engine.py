@@ -11,7 +11,10 @@ class IncidentEngine:
 
     def restore(self, incidents):
         """Restore persisted incidents and continue incident numbering."""
-        self.incidents = list(incidents or [])
+        self.incidents = sorted(
+            list(incidents or []),
+            key=lambda item: self._timestamp(item.get("created_at")) or datetime.min.replace(tzinfo=timezone.utc),
+        )
         numbers = []
         for incident in self.incidents:
             try:
