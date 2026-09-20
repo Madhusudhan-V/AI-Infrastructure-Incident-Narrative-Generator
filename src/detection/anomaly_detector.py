@@ -1,11 +1,11 @@
 """Lightweight unsupervised anomaly detection for infrastructure metrics.
 
-The detector learns a rolling baseline from non-error observations and uses
-Isolation Forest to flag unusual latency/CPU combinations. Rule-based
-detection remains the deterministic safety net for known failures.
+The detector learns rolling healthy baselines with Isolation Forest. Metric
+types are modelled separately so missing CPU/latency values are not treated
+as synthetic numeric anomalies.
 """
 import re
-from collections import deque
+from collections import defaultdict, deque
 from typing import Optional
 
 import numpy as np
@@ -23,24 +23,30 @@ def extract_features(event):
     latency = _number(r"latency_ms=(\d+(?:\.\d+)?)", message)
     cpu = _number(r"cpu_pct=(\d+(?:\.\d+)?)", message)
 
-    # Keep a stable two-dimensional feature vector. Missing values are -1.
     if latency is None and cpu is None:
         return None
+
     return np.array([
         -1.0 if latency is None else latency,
         -1.0 if cpu is None else cpu,
     ], dtype=float)
 
 
+def _signature(features):
+    """Identify which metric dimensions are actually present."""
+    return tuple(i for i, value in enumerate(features) if value >= 0)
+
+
 class InfrastructureAnomalyDetector:
-    """Online-style rolling Isolation Forest for infrastructure metrics."""
+    """Online-style rolling Isolation Forest with metric-aware baselines."""
 
     def __init__(self, window=100, min_samples=20, contamination=0.05, random_state=42):
-        self.samples = deque(maxlen=window)
+        self.window = window
         self.min_samples = min_samples
         self.contamination = contamination
         self.random_state = random_state
-        self.model = None
+        self.samples_by_signature = defaultdict(lambda: deque(maxlen=window))
+        self.models_by_signature = {}
 
     def update(self, event):
         """Return a result dict describing whether the event is anomalous."""
@@ -53,17 +59,22 @@ class InfrastructureAnomalyDetector:
                 "features": None,
             }
 
-        # Only healthy/non-error observations train the baseline.
+        signature = _signature(features)
+        values = features[list(signature)]
+
         if hasattr(event, "severity"):
             severity = event.severity
         elif isinstance(event, dict):
             severity = event.get("severity", 0)
         else:
             severity = 0
-        if severity < 2:
-            self.samples.append(features)
 
-        if len(self.samples) < self.min_samples:
+        # Only healthy/non-error observations train the baseline.
+        if severity < 2:
+            self.samples_by_signature[signature].append(values)
+
+        samples = self.samples_by_signature[signature]
+        if len(samples) < self.min_samples:
             return {
                 "available": False,
                 "anomaly": False,
@@ -71,20 +82,21 @@ class InfrastructureAnomalyDetector:
                 "features": features.tolist(),
             }
 
-        X = np.asarray(self.samples)
-        self.model = IsolationForest(
+        X = np.asarray(samples)
+        model = IsolationForest(
             n_estimators=100,
             contamination=self.contamination,
             random_state=self.random_state,
         )
-        self.model.fit(X)
+        model.fit(X)
+        self.models_by_signature[signature] = model
 
-        prediction = int(self.model.predict([features])[0])
-        raw_score = float(self.model.decision_function([features])[0])
+        prediction = int(model.predict([values])[0])
+        raw_score = float(model.decision_function([values])[0])
         anomaly = prediction == -1
 
-        # Convert the signed decision score into a simple confidence-like
-        # anomaly score for UI/evaluation. It is not a probability.
+        # Convert the signed decision score into a bounded anomaly score.
+        # This is a confidence-like score, not a probability.
         score = max(0.0, min(1.0, 0.5 - raw_score))
 
         return {
