@@ -8,6 +8,7 @@ import streamlit as st
 from dotenv import load_dotenv
 
 from src.core.ai import generate
+from src.core.detection_fusion import fuse
 from src.detection.anomaly_detector import InfrastructureAnomalyDetector
 from src.core.detector import parse_and_detect
 from src.core.incident_engine import IncidentEngine
@@ -40,10 +41,19 @@ st.markdown("""
 
 if "engine" not in st.session_state:
     st.session_state.engine = IncidentEngine()
-    st.session_state.seen = 0
+    st.session_state.engine.restore(load(DB))
     st.session_state.events = []
     st.session_state.anomaly_detector = InfrastructureAnomalyDetector()
     st.session_state.anomalies = []
+
+    # Warm the ML baseline from existing healthy metric observations without
+    # replaying historical events into the incident engine.
+    existing_lines = LOG.read_text(encoding="utf-8").splitlines() if LOG.exists() else []
+    for historical_line in existing_lines:
+        historical_event = parse_and_detect(historical_line)
+        if historical_event:
+            st.session_state.anomaly_detector.update(historical_event)
+    st.session_state.seen = len(existing_lines)
 
 with st.sidebar:
     st.header("CONTROL ROOM")
@@ -60,16 +70,22 @@ with st.sidebar:
 def live_control_room():
     """Refresh the observability surface every two seconds."""
     lines = LOG.read_text(encoding="utf-8").splitlines() if LOG.exists() else []
+    # Handle truncation/rotation without replaying the entire old stream.
+    if len(lines) < st.session_state.seen:
+        st.session_state.seen = 0
+
     for line in lines[st.session_state.seen:]:
         event = parse_and_detect(line)
         if event:
-            st.session_state.events.append(event)
             ml_result = st.session_state.anomaly_detector.update(event)
+            event = fuse(event, ml_result)
+            st.session_state.events.append(event)
             if ml_result["available"] and ml_result["anomaly"]:
                 st.session_state.anomalies.append({
                     "timestamp": event.timestamp,
                     "service": event.service,
-                    "score": ml_result["score"],
+                    "score": round(ml_result["score"], 3),
+                    "promoted": event.ml_anomaly and event.severity >= 2,
                     "features": ml_result["features"],
                 })
             result = st.session_state.engine.add(event)
