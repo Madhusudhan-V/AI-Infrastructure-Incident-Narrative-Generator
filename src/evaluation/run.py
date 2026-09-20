@@ -47,10 +47,10 @@ def evaluate():
         return event, result
 
     # 40 latency-only and 20 CPU-only healthy observations establish
-    # metric-specific baselines. This mirrors the live generator, where
-    # normal events commonly contain one metric at a time.
+    # metric-specific baselines. Values mirror the live generator's
+    # normal latency range (10-120ms) rather than a narrow fixed cluster.
     for i in range(40):
-        latency = 40 + (i % 12)
+        latency = 10 + ((i * 17) % 111)
         process(
             f"2026-09-20T00:00:{i:02d}+00:00 INFO metrics "
             f"Request completed latency_ms={latency}",
