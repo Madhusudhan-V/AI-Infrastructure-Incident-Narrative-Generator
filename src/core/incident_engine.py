@@ -48,8 +48,9 @@ class IncidentEngine:
         if same:
             current["events"].append(event.__dict__)
             current["updated_at"] = event.timestamp
-            current["severity"] = calculate_severity(
-                event, event_count=len(current["events"])
+            current["severity"] = max(
+                current["severity"],
+                calculate_severity(event, event_count=len(current["events"])),
             )
             current["confidence"] = max(
                 current["confidence"], event.confidence, score
