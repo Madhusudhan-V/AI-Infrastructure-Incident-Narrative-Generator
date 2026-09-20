@@ -3,6 +3,7 @@ from src.evaluation.evaluator import (
     detection_latency_seconds,
     grouping_accuracy,
     narrative_grounding_score,
+    summarize_runs,
 )
 
 
@@ -30,3 +31,28 @@ def test_grouping_and_grounding():
         "database connection pool exhausted; requests failed",
         ["database connection pool exhausted", "requests failed"],
     ) == 1.0
+
+
+def test_summarize_runs():
+    result = summarize_runs(
+        [
+            {
+                "precision": 1.0,
+                "recall": 0.5,
+                "f1": 0.6667,
+                "false_positive_rate": 0.0,
+            },
+            {
+                "precision": 0.5,
+                "recall": 1.0,
+                "f1": 0.6667,
+                "false_positive_rate": 0.1,
+            },
+        ]
+    )
+    assert result == {
+        "precision": 0.75,
+        "recall": 0.75,
+        "f1": 0.6667,
+        "false_positive_rate": 0.05,
+    }
