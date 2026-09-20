@@ -28,3 +28,5 @@ class Incident:
     owner: str = "Unassigned"
     resolution: str = ""
     events: list[dict] = field(default_factory=list)
+    correlation_score: float = 1.0
+    services: list[str] = field(default_factory=list)
