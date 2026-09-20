@@ -8,6 +8,7 @@ import streamlit as st
 from dotenv import load_dotenv
 
 from src.core.ai import generate
+from src.detection.anomaly_detector import InfrastructureAnomalyDetector
 from src.core.detector import parse_and_detect
 from src.core.incident_engine import IncidentEngine
 from src.core.storage import init, load, save
@@ -41,6 +42,8 @@ if "engine" not in st.session_state:
     st.session_state.engine = IncidentEngine()
     st.session_state.seen = 0
     st.session_state.events = []
+    st.session_state.anomaly_detector = InfrastructureAnomalyDetector()
+    st.session_state.anomalies = []
 
 with st.sidebar:
     st.header("CONTROL ROOM")
@@ -61,6 +64,14 @@ def live_control_room():
         event = parse_and_detect(line)
         if event:
             st.session_state.events.append(event)
+            ml_result = st.session_state.anomaly_detector.update(event)
+            if ml_result["available"] and ml_result["anomaly"]:
+                st.session_state.anomalies.append({
+                    "timestamp": event.timestamp,
+                    "service": event.service,
+                    "score": ml_result["score"],
+                    "features": ml_result["features"],
+                })
             result = st.session_state.engine.add(event)
             if result:
                 save(DB, result[0])
@@ -69,8 +80,8 @@ def live_control_room():
     incidents = st.session_state.engine.incidents
     active = [i for i in incidents if i["status"] != "RESOLVED"]
     cols = st.columns(5)
-    values = [len(events), sum(e.severity >= 2 for e in events), len(incidents), sum(e.severity >= 3 for e in events), "INCIDENT" if active else "HEALTHY"]
-    for col, label, value in zip(cols, ["LOG EVENTS", "ERRORS", "INCIDENTS", "CRITICAL", "SYSTEM"], values):
+    values = [len(events), sum(e.severity >= 2 for e in events), len(incidents), len(st.session_state.anomalies), "INCIDENT" if active else "HEALTHY"]
+    for col, label, value in zip(cols, ["LOG EVENTS", "ERRORS", "INCIDENTS", "ML ANOMALIES", "SYSTEM"], values):
         col.metric(label, value)
     st.divider()
     left, right = st.columns([1.35, 0.65])
@@ -86,6 +97,11 @@ def live_control_room():
             st.plotly_chart(px.bar(counts, x="type", y="count"), use_container_width=True)
         else:
             st.info("No detected events yet.")
+    if st.session_state.anomalies:
+        st.divider()
+        st.subheader("🧠 ML ANOMALY SIGNALS")
+        st.dataframe(pd.DataFrame(st.session_state.anomalies[-10:]), hide_index=True, use_container_width=True)
+
     if incidents:
         incident = incidents[-1]
         st.divider()
@@ -119,6 +135,6 @@ def live_control_room():
     else:
         st.info("🟢 No active incidents. Start the generator or inject a controlled incident.")
     st.divider()
-    st.caption("Live refresh: 2s • Madhusudhan V • AI-Powered Infrastructure Incident Narrative Generator")
+    st.caption("Live refresh: 2s • Rule + Isolation Forest detection • Madhusudhan V • AI-Powered Infrastructure Incident Narrative Generator")
 
 live_control_room()
