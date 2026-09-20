@@ -54,7 +54,12 @@ class InfrastructureAnomalyDetector:
             }
 
         # Only healthy/non-error observations train the baseline.
-        severity = getattr(event, "severity", event.get("severity", 0))
+        if hasattr(event, "severity"):
+            severity = event.severity
+        elif isinstance(event, dict):
+            severity = event.get("severity", 0)
+        else:
+            severity = 0
         if severity < 2:
             self.samples.append(features)
 
