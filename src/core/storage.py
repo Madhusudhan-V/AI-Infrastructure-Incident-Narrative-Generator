@@ -25,6 +25,6 @@ def save(path,incident):
 def load(path):
     init(path)
     with connect(path) as db:
-        rows=db.execute("SELECT * FROM incidents ORDER BY created_at DESC").fetchall()
+        rows=db.execute("SELECT * FROM incidents ORDER BY created_at ASC").fetchall()
     return [{"id":r[0],"created_at":r[1],"updated_at":r[2],"type":r[3],"severity":r[4],
              "confidence":r[5],"status":r[6],"owner":r[7],"resolution":r[8],"events":json.loads(r[9])} for r in rows]
