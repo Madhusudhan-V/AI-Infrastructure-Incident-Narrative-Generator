@@ -46,15 +46,25 @@ def evaluate():
         )
         return event, result
 
-    # 60 healthy observations establish a deterministic baseline.
-    for i in range(60):
+    # 40 latency-only and 20 CPU-only healthy observations establish
+    # metric-specific baselines. This mirrors the live generator, where
+    # normal events commonly contain one metric at a time.
+    for i in range(40):
         latency = 40 + (i % 12)
-        cpu = 20 + (i % 35)
         process(
             f"2026-09-20T00:00:{i:02d}+00:00 INFO metrics "
-            f"Request completed latency_ms={latency} cpu_pct={cpu}",
+            f"Request completed latency_ms={latency}",
             False,
-            "healthy",
+            "healthy_latency",
+        )
+
+    for i in range(20):
+        cpu = 20 + (i % 35)
+        process(
+            f"2026-09-20T00:00:{40 + i:02d}+00:00 INFO metrics "
+            f"CPU usage sampled cpu_pct={cpu}",
+            False,
+            "healthy_cpu",
         )
 
     # Known failure vocabulary: four independent rule-based scenarios.
@@ -71,14 +81,15 @@ def evaluate():
             f"rule_{label}",
         )
 
-    # Statistical anomalies intentionally avoid known rule vocabulary.
+    # Statistical anomaly intentionally avoids known rule vocabulary.
     process(
         "2026-09-20T00:02:00+00:00 INFO metrics Request completed latency_ms=900",
         True,
         "ml_latency_anomaly",
     )
 
-    # Benign metric observations after the anomaly check the false-positive path.
+    # Benign latency observations after the anomaly exercise the false-positive
+    # path without changing the learned baseline with the anomaly itself.
     for i, latency in enumerate([52, 61, 73, 88, 96, 105, 112, 119]):
         process(
             f"2026-09-20T00:03:{i:02d}+00:00 INFO metrics "
