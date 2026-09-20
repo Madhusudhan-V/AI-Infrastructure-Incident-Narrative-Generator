@@ -1,10 +1,10 @@
 """Fuse deterministic rules and ML anomaly signals into one event decision."""
 
 
-def fuse(event, ml_result, threshold=0.65):
+def fuse(event, ml_result, threshold=0.60):
     """Enrich an Event with an ML signal and promote strong anomalies to incidents.
 
-    Rules remain the primary deterministic signal. A strong Isolation Forest
+    Rules remain the primary deterministic signal. A sufficiently strong Isolation Forest
     anomaly can promote an otherwise non-error metric event to a severity-2
     statistical anomaly so it enters the normal incident correlation flow.
     """
