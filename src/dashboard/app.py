@@ -22,21 +22,181 @@ load_dotenv(ROOT / ".env")
 DB = os.getenv("DATABASE_PATH", str(ROOT / "data/runtime/incidents.db"))
 init(DB)
 
-st.set_page_config(page_title="Sentinel Incident Center", page_icon="◉", layout="wide")
+st.set_page_config(page_title="Sentinel Incident Center", page_icon="S", layout="wide")
 
 st.markdown("""
 <style>
-.block-container{max-width:1500px;padding-top:1.5rem}
-.hero{padding:1.4rem;border:1px solid #263247;border-radius:20px;
-background:linear-gradient(135deg,#0d1420,#182235);margin-bottom:1rem}
-.hero h1{margin:0}.hero p{color:#9ba9bb}
+:root {
+    --border: #263244;
+    --border-soft: #1c2635;
+    --text: #f2f5f8;
+    --muted: #8e9aaa;
+    --accent: #ff4d55;
+    --green: #4fd1a5;
+}
+
+.stApp {
+    background:
+        radial-gradient(circle at 78% 0%, rgba(50,72,110,.16), transparent 34rem),
+        linear-gradient(180deg, #090d14 0%, #0b1018 100%);
+    color: var(--text);
+}
+
+.block-container {
+    max-width: 1480px;
+    padding-top: 2rem;
+    padding-bottom: 3rem;
+}
+
+[data-testid="stSidebar"] {
+    background: #0d121b;
+    border-right: 1px solid var(--border-soft);
+}
+
+[data-testid="stSidebar"] > div:first-child {
+    padding-top: 2rem;
+}
+
+[data-testid="stMetric"] {
+    background: linear-gradient(180deg, rgba(20,28,41,.92), rgba(14,20,30,.92));
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1rem 1.05rem;
+    min-height: 104px;
+}
+
+[data-testid="stMetricLabel"] {
+    color: #7f8da0 !important;
+    font-size: .72rem !important;
+    font-weight: 700 !important;
+    letter-spacing: .11em;
+}
+
+[data-testid="stMetricValue"] {
+    color: #f4f7fa !important;
+    font-size: 1.65rem !important;
+    font-weight: 650 !important;
+}
+
+.hero {
+    position: relative;
+    overflow: hidden;
+    padding: 2rem 2.1rem;
+    border: 1px solid #29364a;
+    border-radius: 18px;
+    background:
+        linear-gradient(135deg, rgba(18,28,43,.98), rgba(13,20,31,.96)),
+        radial-gradient(circle at 90% 20%, rgba(110,168,254,.16), transparent 24rem);
+    margin-bottom: 1.25rem;
+    box-shadow: 0 20px 60px rgba(0,0,0,.22);
+}
+
+.hero:after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 28%;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+}
+
+.hero-kicker {
+    color: #8492a5;
+    font-size: .72rem;
+    font-weight: 750;
+    letter-spacing: .16em;
+    margin-bottom: .65rem;
+}
+
+.hero h1 {
+    margin: 0;
+    color: #f7f9fb;
+    font-size: clamp(1.7rem, 3vw, 2.65rem);
+    line-height: 1.08;
+    letter-spacing: -.025em;
+}
+
+.hero p {
+    margin: .7rem 0 0;
+    color: #9aa8ba;
+    font-size: .95rem;
+}
+
+.section-label {
+    color: #8d9bad;
+    font-size: .7rem;
+    font-weight: 800;
+    letter-spacing: .15em;
+    margin: .2rem 0 .65rem;
+}
+
+.incident-banner {
+    border: 1px solid rgba(255,77,85,.32);
+    background: linear-gradient(90deg, rgba(255,77,85,.10), rgba(255,77,85,.035));
+    border-radius: 14px;
+    padding: .8rem 1rem;
+    margin-bottom: 1rem;
+}
+
+.incident-banner strong {
+    color: #ff7b81;
+    letter-spacing: .08em;
+    font-size: .72rem;
+}
+
+.incident-banner span {
+    color: #d8dee7;
+    margin-left: .65rem;
+    font-size: .82rem;
+}
+
+[data-testid="stCodeBlock"] {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: #080c12;
+}
+
+[data-testid="stDataFrame"] {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+button[kind="primary"] {
+    background: var(--accent) !important;
+    border: 1px solid var(--accent) !important;
+}
+
+button[kind="primary"]:hover {
+    background: #ff6269 !important;
+    border-color: #ff6269 !important;
+}
+
+.stTabs [data-baseweb="tab-list"] {
+    gap: .25rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.stTabs [data-baseweb="tab"] {
+    color: #7f8da0;
+    padding: .65rem .85rem;
+    font-weight: 650;
+}
+
+.stTabs [aria-selected="true"] {
+    color: #f2f5f8 !important;
+}
+
+footer {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 
 st.markdown("""
 <div class="hero">
-<h1>◉ SENTINEL INCIDENT INTELLIGENCE CENTER</h1>
-<p>Live infrastructure observability • detection • correlation • AI-assisted incident analysis</p>
+    <div class="hero-kicker">SENTINEL / INCIDENT OPERATIONS</div>
+    <h1>Incident Intelligence Center</h1>
+    <p>Live infrastructure observability · detection · correlation · AI-assisted incident analysis</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -55,13 +215,19 @@ if "engine" not in st.session_state:
     st.session_state.seen = len(existing_lines)
 
 with st.sidebar:
-    st.header("CONTROL ROOM")
-    st.write("Project Lead: Madhusudhan V")
-    scenario = st.selectbox("Demo scenario", ["database", "network", "auth", "resource"])
-    if st.button("⚡ Inject Incident", type="primary", use_container_width=True):
+    st.markdown('<div class="section-label">CONTROL ROOM</div>', unsafe_allow_html=True)
+    st.markdown("**Project Lead**")
+    st.caption("Madhusudhan V")
+    st.markdown("**Demo scenario**")
+    scenario = st.selectbox(
+        "Demo scenario",
+        ["database", "network", "auth", "resource"],
+        label_visibility="collapsed",
+    )
+    if st.button("Inject Incident", type="primary", use_container_width=True):
         inject_incident(scenario)
         st.rerun()
-    if st.button("Reset session", use_container_width=True):
+    if st.button("Reset Session", use_container_width=True):
         st.session_state.clear()
         st.rerun()
 
@@ -115,11 +281,11 @@ def live_control_room():
     left, right = st.columns([1.35, 0.65])
 
     with left:
-        st.subheader("LIVE EVENT STREAM")
+        st.markdown('<div class="section-label">LIVE EVENT STREAM</div>', unsafe_allow_html=True)
         st.code("\n".join(lines[-28:]) or "Waiting for logs...", language="text")
 
     with right:
-        st.subheader("DETECTION ANALYTICS")
+        st.markdown('<div class="section-label">DETECTION ANALYTICS</div>', unsafe_allow_html=True)
         if events:
             df = pd.DataFrame([
                 {"type": e.incident_type or "normal", "severity": e.severity}
@@ -136,7 +302,7 @@ def live_control_room():
 
     if st.session_state.anomalies:
         st.divider()
-        st.subheader("🧠 ML ANOMALY SIGNALS")
+        st.markdown('<div class="section-label">ML ANOMALY SIGNALS</div>', unsafe_allow_html=True)
         st.dataframe(
             pd.DataFrame(st.session_state.anomalies[-10:]),
             hide_index=True,
@@ -148,7 +314,11 @@ def live_control_room():
         timeline = build_timeline(incident)
 
         st.divider()
-        st.subheader("🔴 INCIDENT " + incident["id"])
+        st.markdown(
+            f'<div class="incident-banner"><strong>ACTIVE INCIDENT</strong>'
+            f'<span>{incident["id"]} · {incident["type"].replace("_", " ").upper()}</span></div>',
+            unsafe_allow_html=True,
+        )
 
         a, b, c, d = st.columns(4)
         a.metric("TYPE", incident["type"].replace("_", " ").upper())
@@ -157,8 +327,8 @@ def live_control_room():
         d.metric("STATUS", incident["status"])
 
         st.caption(
-            f'Correlation: {incident.get("correlation_score", 1.0):.0%} • '
-            f'Services: {", ".join(incident.get("services", [])) or "Unknown"} • '
+            f'Correlation: {incident.get("correlation_score", 1.0):.0%} · '
+            f'Services: {", ".join(incident.get("services", [])) or "Unknown"} · '
             f'Duration: {timeline["duration_seconds"]}s'
         )
 
@@ -217,7 +387,7 @@ def live_control_room():
         with t4:
             st.json(incident)
 
-        st.subheader("INCIDENT COMMANDER REVIEW")
+        st.markdown('<div class="section-label">INCIDENT COMMANDER REVIEW</div>', unsafe_allow_html=True)
         status_options = ["DETECTED", "INVESTIGATING", "RESOLVED"]
         status = st.selectbox(
             "Status",
@@ -240,7 +410,7 @@ def live_control_room():
             st.rerun()
 
         st.divider()
-        st.subheader("INCIDENT HISTORY")
+        st.markdown('<div class="section-label">INCIDENT HISTORY</div>', unsafe_allow_html=True)
         history_rows = [{
             "ID": item["id"],
             "TYPE": item["type"],
@@ -259,7 +429,7 @@ def live_control_room():
         )
 
         st.divider()
-        st.subheader("📊 OPERATIONS ANALYTICS")
+        st.markdown('<div class="section-label">OPERATIONS ANALYTICS</div>', unsafe_allow_html=True)
         m1, m2, m3, m4 = st.columns(4)
         m1.metric("ACTIVE", stats["active"])
         m2.metric("RESOLVED", stats["resolved"])
@@ -287,13 +457,13 @@ def live_control_room():
             )
     else:
         st.info(
-            "🟢 No active incidents. Start the generator or inject a controlled incident."
+            "No active incidents. Start the generator or inject a controlled incident."
         )
 
     st.divider()
     st.caption(
-        "Live refresh: 2s • Rule + Isolation Forest + correlation intelligence • "
-        "Madhusudhan V • AI-Powered Infrastructure Incident Narrative Generator"
+        "Live refresh: 2s · Rule + Isolation Forest + correlation intelligence · "
+        "Madhusudhan V · AI-Powered Infrastructure Incident Narrative Generator"
     )
 
 
