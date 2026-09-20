@@ -1,8 +1,10 @@
 from datetime import datetime, timezone
 
+from .incident_intelligence import calculate_severity, correlation_score
+
 
 class IncidentEngine:
-    """Group actionable detections into incidents within a bounded time window."""
+    """Correlate actionable detections into bounded, explainable incidents."""
 
     def __init__(self, window_seconds=45):
         self.window_seconds = window_seconds
@@ -10,10 +12,11 @@ class IncidentEngine:
         self._counter = 0
 
     def restore(self, incidents):
-        """Restore persisted incidents and continue incident numbering."""
+        """Restore persisted incidents chronologically."""
         self.incidents = sorted(
             list(incidents or []),
-            key=lambda item: self._timestamp(item.get("created_at")) or datetime.min.replace(tzinfo=timezone.utc),
+            key=lambda item: self._timestamp(item.get("created_at"))
+            or datetime.min.replace(tzinfo=timezone.utc),
         )
         numbers = []
         for incident in self.incidents:
@@ -27,7 +30,7 @@ class IncidentEngine:
     def _timestamp(value):
         try:
             return datetime.fromisoformat(value.replace("Z", "+00:00"))
-        except (AttributeError, ValueError):
+        except (AttributeError, TypeError, ValueError):
             return None
 
     def add(self, event):
@@ -35,30 +38,28 @@ class IncidentEngine:
             return None
 
         current = self.incidents[-1] if self.incidents else None
-        event_time = self._timestamp(event.timestamp)
-        current_time = self._timestamp(current["updated_at"]) if current else None
-
-        within_window = False
-        if event_time and current_time:
-            within_window = abs(
-                (event_time - current_time).total_seconds()
-            ) <= self.window_seconds
-
-        same = (
+        score = correlation_score(event, current, self.window_seconds) if current else 0.0
+        same = bool(
             current
             and current["status"] != "RESOLVED"
-            and within_window
-            and (
-                event.incident_type == current["type"]
-                or event.severity >= 3
-            )
+            and score >= 0.50
         )
 
         if same:
             current["events"].append(event.__dict__)
-            current["severity"] = max(current["severity"], event.severity)
-            current["confidence"] = max(current["confidence"], event.confidence)
             current["updated_at"] = event.timestamp
+            current["severity"] = calculate_severity(
+                event, event_count=len(current["events"])
+            )
+            current["confidence"] = max(
+                current["confidence"], event.confidence, score
+            )
+            current["correlation_score"] = score
+            current["services"] = sorted({
+                item.get("service")
+                for item in current["events"]
+                if item.get("service")
+            })
             return current, False
 
         self._counter += 1
@@ -67,11 +68,13 @@ class IncidentEngine:
             "created_at": event.timestamp,
             "updated_at": event.timestamp,
             "type": event.incident_type or "anomaly",
-            "severity": event.severity,
+            "severity": calculate_severity(event, event_count=1),
             "confidence": event.confidence,
             "status": "DETECTED",
             "owner": "Unassigned",
             "resolution": "",
+            "correlation_score": 1.0,
+            "services": [event.service],
             "events": [event.__dict__],
         }
         self.incidents.append(incident)
