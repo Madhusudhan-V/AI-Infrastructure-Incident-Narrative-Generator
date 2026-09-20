@@ -13,6 +13,8 @@ class Event:
     severity: int = 0
     confidence: float = 0.0
     rule_matches: list[str] = field(default_factory=list)
+    ml_anomaly: bool = False
+    anomaly_score: float = 0.0
 
 @dataclass
 class Incident:
