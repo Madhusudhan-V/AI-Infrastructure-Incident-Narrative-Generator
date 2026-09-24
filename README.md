@@ -154,7 +154,10 @@ src/
 └── notification/     # notification interface
 
 tests/                # automated tests
+experiments/          # selected development experiments
+tests/                # automated tests
 docs/                 # architecture, methodology, evaluation
+experiments/          # selected development experiments
 data/sample_logs/     # sample log data
 config/               # project configuration
 team/                 # team responsibilities
@@ -252,9 +255,8 @@ This demonstrates the complete path from **raw logs → detection → incident �
 - [Architecture](docs/architecture.md)
 - [Methodology](docs/methodology.md)
 - [Evaluation](docs/evaluation.md)
-- [Dataset notes](docs/dataset.md)
-- [Roadmap](docs/roadmap.md)
-- [Team contributions](team/TEAM.md)
+- [Experiments](experiments/README.md)
+- [Team](team/TEAM.md)
 
 ---
 
