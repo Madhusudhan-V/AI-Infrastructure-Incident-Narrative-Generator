@@ -155,9 +155,7 @@ src/
 
 tests/                # automated tests
 experiments/          # selected development experiments
-tests/                # automated tests
 docs/                 # architecture, methodology, evaluation
-experiments/          # selected development experiments
 data/sample_logs/     # sample log data
 config/               # project configuration
 team/                 # team responsibilities
