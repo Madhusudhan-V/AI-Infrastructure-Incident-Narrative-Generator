@@ -216,8 +216,6 @@ if "engine" not in st.session_state:
 
 with st.sidebar:
     st.markdown('<div class="section-label">CONTROL ROOM</div>', unsafe_allow_html=True)
-    st.markdown("**Project Lead**")
-    st.caption("Madhusudhan V")
     st.markdown("**Demo scenario**")
     scenario = st.selectbox(
         "Demo scenario",
@@ -463,7 +461,7 @@ def live_control_room():
     st.divider()
     st.caption(
         "Live refresh: 2s · Rule + Isolation Forest + correlation intelligence · "
-        "Madhusudhan V · AI-Powered Infrastructure Incident Narrative Generator"
+        "AI-Powered Infrastructure Incident Narrative Generator"
     )
 
 
