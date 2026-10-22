@@ -6,6 +6,7 @@ claim to collect metrics from remote hosts or individual application containers.
 from __future__ import annotations
 
 import argparse
+import os
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -14,7 +15,7 @@ import psutil
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_LOG_PATH = ROOT / "data" / "sample_logs" / "application.log"
+DEFAULT_LOG_PATH = Path(os.getenv(\n    "SENTINEL_LOG_PATH", str(ROOT / "data" / "runtime" / "application.log")\n))
 
 
 def format_metric_line(cpu_pct, memory_pct, disk_pct, timestamp=None):
