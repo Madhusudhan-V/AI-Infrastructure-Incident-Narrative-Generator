@@ -33,13 +33,15 @@ Live Infrastructure Logs
        Severity + Timeline
                   │
                   ▼
-               SQLite
+       Cross-Signal Diagnosis
                   │
                   ▼
           AI Incident Narrative
                   │
                   ▼
         Sentinel Operations UI
+
+SQLite persists incident records and review state.
 ```
 
 The system is designed around a practical operations workflow:
