@@ -1,7 +1,7 @@
 # Architecture
 
 ```text
-Live Log Generator / Existing Log Stream
+Live Log Generator + Local Host Metrics Collector / Existing Log Stream
                   |
                   v
            Log Watcher / Parser
@@ -45,3 +45,6 @@ Research context:
 - NIST SP 800-94 (IDS/IDPS): https://csrc.nist.gov/pubs/sp/800/94/final
 - LogHub public log datasets: https://github.com/logpai/loghub
 - Wang and Qi, survey of microservice root-cause analysis: https://arxiv.org/abs/2408.00803
+
+
+The optional `src.telemetry.host_metrics_collector` samples CPU, memory, and disk utilization on the machine running Sentinel and appends timestamped samples to the same log stream. It uses `psutil`. These measurements are real local-host signals, not metrics from remote services or a production cluster.
