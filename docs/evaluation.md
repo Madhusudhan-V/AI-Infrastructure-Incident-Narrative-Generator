@@ -159,6 +159,22 @@ The five scenarios are deliberately constructed around known patterns that this 
 
 The test suite also checks insufficient-evidence behavior, explicit contradictory signals, and missing timestamps. Final benchmark results should be copied from a fresh run of the evaluation script and reported alongside the scenario definitions and limitations.
 
+
+## Repeated model training and sensitivity experiments
+
+Run:
+
+```bash
+python -m src.evaluation.repeated_experiments --repeats 1 --contamination 0.05
+python -m src.evaluation.repeated_experiments
+```
+
+The runner creates a fresh `InfrastructureAnomalyDetector` for each run, varies the random seed, compares configured Isolation Forest contamination settings, and writes per-run metrics to `experiments/results/repeated_detection_runs.csv`. It reports precision, recall, F1, false-positive rate, and aggregate mean/population standard deviation.
+
+This experiment is intended to expose seed sensitivity and parameter trade-offs, not to select the best run and report it alone. The existing evaluator feeds a healthy prefix before incident/anomaly examples, so this is a chronological synthetic stream evaluation rather than a fully independent train/validation/test split. Results must be described accordingly.
+
+The next generalization milestone is a held-out evaluation on a suitably labelled public log dataset such as a relevant LogHub subset. Do not claim CPU/latency multi-signal performance from a log-only dataset without corresponding metric ground truth.
+
 ## Reproducibility
 
 The benchmark can be regenerated with:
