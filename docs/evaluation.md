@@ -157,7 +157,7 @@ The GitHub Actions validation run reported:
 
 The five scenarios are deliberately constructed around known patterns that this rule-based prototype is designed to recognize. This result confirms behavior on those five examples only; it is not evidence of generalizable diagnosis accuracy or production performance. The diagnosis score itself is a heuristic ranking score, not a probability.
 
-The test suite also checks insufficient-evidence behavior, explicit contradictory signals, and missing timestamps. Final benchmark results should be copied from a fresh run of the evaluation script and reported alongside the scenario definitions and limitations.
+The test suite also checks insufficient-evidence behavior, explicit contradictory signals, and missing timestamps. Run `python -m src.evaluation.final_validation` for the current test count, both controlled benchmarks, repeated ML sensitivity runs, and saved Markdown/JSON/CSV artifacts. This command generates fresh results; do not quote a previous run as if it were the latest.
 
 
 ## Repeated model training and sensitivity experiments
@@ -189,3 +189,16 @@ The evaluation code is intentionally separate from the Streamlit dashboard so th
 ## Local-host telemetry smoke tests
 
 The test suite checks that local CPU/memory/disk samples are formatted into the expected event structure and that high CPU or memory samples can trigger the existing resource-pressure rule. These are unit/smoke tests using controlled metric values; they do not claim that a production incident was observed or that a resource threshold is universally correct.
+
+
+## One-command final validation
+
+From the repository root, run:
+
+```bash
+python -m src.evaluation.final_validation
+```
+
+The command executes `pytest -q`, the controlled 400-event fused/ML detection evaluation, the five-scenario diagnosis evaluation, and a repeated contamination/seed sensitivity experiment. Defaults are three seeds for each of contamination 0.03 and 0.05. Output is saved to `experiments/results/final_validation/` as a Markdown report, JSON summary, and per-run CSV. It does not overwrite the earlier `experiments/results/repeated_detection_runs.csv` file. Use `--repeats 1 --contamination 0.05` for a shorter smoke run.
+
+The per-scenario rows in the baseline evaluator contain only positive examples. Their false-positive rates are not informative because they have no negative examples; use the overall 400-event result as the primary fused classification result. Repeated experiments evaluate the ML signal separately and are not a held-out generalization test.
