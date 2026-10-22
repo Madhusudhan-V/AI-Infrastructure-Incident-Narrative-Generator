@@ -128,6 +128,26 @@ Important limitations:
 
 For a stronger research evaluation, future work should use labelled production-like logs, multiple workload distributions, repeated random seeds, and a held-out test set.
 
+
+## Cross-signal diagnosis evaluation
+
+The diagnosis module is evaluated separately from the existing detection benchmark because diagnosis ranking and event detection are different tasks.
+
+Run the controlled five-scenario diagnosis benchmark with:
+
+```bash
+python -m src.evaluation.diagnosis_eval
+```
+
+The scenarios cover database connection exhaustion with API latency, network connectivity failure, resource pressure, authentication failure, and latency degradation. Each scenario has a known synthetic label. The script reports:
+
+- **Top-1 accuracy:** whether the first-ranked candidate matches the scenario label.
+- **Top-3 accuracy:** whether the expected label appears within the first three candidates.
+
+These metrics describe only the small, deliberately constructed synthetic scenario set. They must not be presented as production accuracy or generalizable real-world performance. The diagnosis score itself is a heuristic ranking score, not a probability.
+
+The test suite also checks insufficient-evidence behavior, explicit contradictory signals, and missing timestamps. Final benchmark results should be copied from a fresh run of the evaluation script and reported alongside the scenario definitions and limitations.
+
 ## Reproducibility
 
 The benchmark can be regenerated with:
