@@ -25,6 +25,7 @@ PATTERNS = {
             re.I,
         ),
         "support": re.compile(r"database|\bdb\b|sql|query", re.I),
+        "contradiction": re.compile(r"pool healthy|connections normal|database healthy|no database errors", re.I),
         "checks": [
             "Inspect database connection-pool utilization and configured limits.",
             "Compare database response times with API latency over the incident window.",
@@ -39,6 +40,7 @@ PATTERNS = {
             re.I,
         ),
         "support": re.compile(r"network|gateway|upstream|timeout|connection", re.I),
+        "contradiction": re.compile(r"network healthy|connectivity verified|upstream healthy|connection successful", re.I),
         "checks": [
             "Check connectivity between the affected service and its dependency.",
             "Inspect gateway, DNS, and upstream error logs for the same time window.",
@@ -53,6 +55,7 @@ PATTERNS = {
             re.I,
         ),
         "support": re.compile(r"cpu|memory|resource|worker|latency_ms", re.I),
+        "contradiction": re.compile(r"cpu normal|memory normal|resource usage normal|no resource pressure", re.I),
         "checks": [
             "Inspect CPU and memory utilization for the affected service.",
             "Check workload volume, recent deployments, and resource limits.",
@@ -67,6 +70,7 @@ PATTERNS = {
             re.I,
         ),
         "support": re.compile(r"auth|login|token|permission|credential", re.I),
+        "contradiction": re.compile(r"authentication succeeded|auth successful|authorized successfully", re.I),
         "checks": [
             "Inspect authentication-provider and authorization logs.",
             "Check token expiry, credential rotation, and recent access-policy changes.",
@@ -81,6 +85,7 @@ PATTERNS = {
             re.I,
         ),
         "support": re.compile(r"latency|slow|timeout|response time", re.I),
+        "contradiction": re.compile(r"latency normal|response time normal|latency returned to normal", re.I),
         "checks": [
             "Compare latency across affected and healthy services.",
             "Inspect dependency response times and recent workload changes.",
@@ -129,7 +134,7 @@ def diagnose_incident(incident, dependencies=None, top_k=3):
     incident = incident or {}
     events = sorted(
         list(incident.get("events", []) or []),
-        key=lambda event: _timestamp(event.get("timestamp")) or datetime.min,
+        key=lambda event: str(event.get("timestamp", "") or ""),
     )
     if not events:
         return {
@@ -167,6 +172,10 @@ def diagnose_incident(incident, dependencies=None, top_k=3):
             event for event, text in zip(events, event_texts)
             if event not in direct_events and spec["support"].search(text)
         ]
+        contradictory_events = [
+            event for event, text in zip(events, event_texts)
+            if spec["contradiction"].search(text)
+        ]
         corroboration = 0
         if key != "latency_degradation" and latency_present:
             corroboration += 1
@@ -190,7 +199,14 @@ def diagnose_incident(incident, dependencies=None, top_k=3):
             "ranking_score": score,
             "score_interpretation": "Heuristic evidence-ranking score; not a probability.",
             "supporting_evidence": evidence,
-            "contradictory_evidence": [],
+            "contradictory_evidence": [
+                {
+                    "timestamp": event.get("timestamp", "unknown"),
+                    "service": event.get("service", "unknown"),
+                    "message": event.get("message", event.get("raw", "")),
+                }
+                for event in contradictory_events
+            ],
             "uncertainty": (
                 "The observed signals are consistent with this explanation, but the evidence "
                 "does not establish causation."
@@ -202,10 +218,6 @@ def diagnose_incident(incident, dependencies=None, top_k=3):
     # a known upstream and downstream service appear in the same incident.
     service_lower = {s.lower() for s in services}
     for candidate in candidates:
-        candidate_services = {
-            str(item.get("service", "")).lower()
-            for item in candidate["supporting_evidence"]
-        }
         linked = False
         for upstream, downstreams in dependencies.items():
             if upstream.lower() in service_lower and any(d.lower() in service_lower for d in downstreams):
