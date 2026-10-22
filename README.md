@@ -92,7 +92,7 @@ The system is designed around a practical operations workflow:
 - Returns an insufficient-evidence state when no supported pattern matches.
 - This first version uses signals already present in the log stream; it does not add live host telemetry, packet capture, or distributed tracing.
 - Initial controlled benchmark: 5/5 labelled synthetic scenarios matched the expected top-ranked explanation (100% top-1 and top-3 on this small test set only; not production accuracy).
-- Latest recorded CI run: 24 automated tests passed.
+- GitHub Actions runs the automated test suite and controlled detection/diagnosis benchmarks; use the final validation command below for a fresh local report.
 
 Start real local-host metrics collection in a separate terminal:
 
@@ -100,7 +100,7 @@ Start real local-host metrics collection in a separate terminal:
 python -m src.telemetry.host_metrics_collector --interval 2
 ```
 
-Stop it with Ctrl+C. It appends CPU, memory, and disk samples to the configured log stream. Run the log generator separately for controlled synthetic incident injection.
+Stop it with Ctrl+C. Both the host collector and live log generator write by default to the ignored runtime file `data/runtime/application.log`, not the tracked fixture `data/sample_logs/application.log`. To use another log stream for both, set `SENTINEL_LOG_PATH` before starting the dashboard and producer processes. The host collector measures only the machine running it; it is not remote-service telemetry.
 
 Run the controlled synthetic diagnosis benchmark with:
 
@@ -174,7 +174,7 @@ Confusion counts: **98 TP, 290 TN, 10 FP, 2 FN**.
 | F1 | **59.70%** |
 | False-positive rate | **10.38%** |
 
-The benchmark is **synthetic and controlled**. These numbers should not be interpreted as production or real-world accuracy. See the evaluation documentation for methodology and limitations.
+The benchmark is **synthetic and controlled**. These recorded baseline numbers should not be interpreted as production or real-world accuracy. Run `python -m src.evaluation.final_validation` to regenerate current results and preserve the report artifacts. See the evaluation documentation for methodology and limitations.
 
 ---
 
@@ -264,11 +264,17 @@ The dashboard refreshes automatically and displays new events, detections, incid
 pytest -q
 ```
 
-### 6. Run the evaluation
+### 6. Run final validation (recommended)
+
+Run the complete local validation from the repository root with one command:
 
 ```bash
-python -m src.evaluation.run
+python -m src.evaluation.final_validation
 ```
+
+This runs the automated test suite, the 400-event synthetic detection benchmark, the five-scenario cross-signal diagnosis benchmark, and repeated Isolation Forest sensitivity experiments (3 runs per contamination setting by default). It writes a Markdown report, JSON metrics, and a per-run CSV under `experiments/results/final_validation/`. Existing experiment CSVs are left untouched.
+
+For a quick smoke run, use `python -m src.evaluation.final_validation --repeats 1 --contamination 0.05`.
 
 ---
 
