@@ -23,7 +23,7 @@ def format_metric_line(cpu_pct, memory_pct, disk_pct, timestamp=None):
     level = "WARN" if cpu_pct >= 90 or memory_pct >= 90 or disk_pct >= 95 else "INFO"
     return (
         f"{timestamp} {level} host-metrics "
-        f"Host utilization sampled cpu_pct={cpu_pct:.1f} "
+        f"CPU usage sampled cpu_pct={cpu_pct:.1f} "
         f"memory_pct={memory_pct:.1f}% disk_pct={disk_pct:.1f}%"
     )
 
