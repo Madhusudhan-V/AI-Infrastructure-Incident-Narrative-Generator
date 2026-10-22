@@ -6,7 +6,6 @@ The module deliberately consumes the incident events already available in Sentin
 from __future__ import annotations
 
 import re
-from datetime import datetime
 
 
 DEFAULT_DEPENDENCIES = {
@@ -95,13 +94,6 @@ PATTERNS = {
 }
 
 
-def _timestamp(value):
-    try:
-        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
-    except (TypeError, ValueError):
-        return None
-
-
 def _event_text(event):
     return " ".join(
         str(event.get(key, "") or "")
@@ -183,7 +175,17 @@ def diagnose_incident(incident, dependencies=None, top_k=3):
             corroboration += 1
 
         # A small, explainable ranking heuristic; not a probability.
-        score = min(95, 48 + min(18, (len(direct_events) - 1) * 8) + min(20, len(support_events) * 7) + corroboration * 5)
+        score = max(
+            20,
+            min(
+                95,
+                48
+                + min(18, (len(direct_events) - 1) * 8)
+                + min(20, len(support_events) * 7)
+                + corroboration * 5
+                - min(20, len(contradictory_events) * 10),
+            ),
+        )
         evidence = []
         for event in direct_events + support_events:
             evidence.append({
