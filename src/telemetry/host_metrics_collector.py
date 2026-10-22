@@ -15,7 +15,9 @@ import psutil
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_LOG_PATH = Path(os.getenv(\n    "SENTINEL_LOG_PATH", str(ROOT / "data" / "runtime" / "application.log")\n))
+DEFAULT_LOG_PATH = Path(
+    os.getenv("SENTINEL_LOG_PATH", str(ROOT / "data" / "runtime" / "application.log"))
+)
 
 
 def format_metric_line(cpu_pct, memory_pct, disk_pct, timestamp=None):
