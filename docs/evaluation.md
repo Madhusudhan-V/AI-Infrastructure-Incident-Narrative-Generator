@@ -153,7 +153,7 @@ The GitHub Actions validation run reported:
 | Synthetic scenarios | 5 |
 | Top-1 diagnosis accuracy | 100% (5/5) |
 | Top-3 diagnosis accuracy | 100% (5/5) |
-| Automated test suite | 24 passed |
+| Automated test suite | See the latest CI run and generated final-validation report for the current count |
 
 The five scenarios are deliberately constructed around known patterns that this rule-based prototype is designed to recognize. This result confirms behavior on those five examples only; it is not evidence of generalizable diagnosis accuracy or production performance. The diagnosis score itself is a heuristic ranking score, not a probability.
 
