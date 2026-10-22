@@ -8,3 +8,6 @@ __pycache__/
 models/*.bin
 models/*.joblib
 .ipynb_checkpoints/
+
+# Runtime logs and local incident database
+data/runtime/
