@@ -184,3 +184,8 @@ python -m src.evaluation.run
 ```
 
 The evaluation code is intentionally separate from the Streamlit dashboard so that detection experiments remain reproducible and independent of the UI.
+
+
+## Local-host telemetry smoke tests
+
+The test suite checks that local CPU/memory/disk samples are formatted into the expected event structure and that high CPU or memory samples can trigger the existing resource-pressure rule. These are unit/smoke tests using controlled metric values; they do not claim that a production incident was observed or that a resource threshold is universally correct.
