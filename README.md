@@ -2,7 +2,7 @@
 
 > **Real-time incident intelligence for infrastructure operations**
 
-Sentinel is a local-first platform that turns live infrastructure logs into structured, evidence-backed incident intelligence. It combines deterministic rules with an Isolation Forest anomaly detector, correlates related events, reconstructs incident timelines, generates an AI-assisted narrative, persists incident state in SQLite, and presents the result through a live Streamlit operations dashboard.
+Sentinel is a local-first infrastructure incident-intelligence platform. It combines deterministic rules, an Isolation Forest anomaly detector, incident correlation, cross-signal diagnosis, AI-assisted narratives, SQLite persistence, and a live Streamlit operations dashboard. It can consume simulated incident logs and a new local-host telemetry collector for CPU, memory, and disk utilization.
 
 **Project Lead:** Madhusudhan V  
 **Team:** Madhusudhan V · Lifda Nashan · Nishmitha-Krishna · Kalpithaa
@@ -61,7 +61,10 @@ The system is designed around a practical operations workflow:
 
 ## Key features
 
-### Detection
+### Telemetry and detection
+- Synthetic scenario log generation for repeatable incident demonstrations.
+- Optional local-host CPU, memory, and disk utilization collector using psutil.
+- Actual host telemetry is clearly labelled as `host-metrics`; it describes the machine running the collector, not remote services.
 - Rule-based detection for database, network, authentication, and resource failures.
 - Isolation Forest for statistical latency/CPU anomalies.
 - Separate ML anomaly signal and actionable incident decision.
@@ -90,6 +93,14 @@ The system is designed around a practical operations workflow:
 - This first version uses signals already present in the log stream; it does not add live host telemetry, packet capture, or distributed tracing.
 - Initial controlled benchmark: 5/5 labelled synthetic scenarios matched the expected top-ranked explanation (100% top-1 and top-3 on this small test set only; not production accuracy).
 - Latest recorded CI run: 24 automated tests passed.
+
+Start real local-host metrics collection in a separate terminal:
+
+```bash
+python -m src.telemetry.host_metrics_collector --interval 2
+```
+
+Stop it with Ctrl+C. It appends CPU, memory, and disk samples to the configured log stream. Run the log generator separately for controlled synthetic incident injection.
 
 Run the controlled synthetic diagnosis benchmark with:
 
@@ -190,6 +201,7 @@ src/
 ├── detection/        # rule engine + anomaly detector
 ├── dashboard/        # Streamlit operations dashboard
 ├── evaluation/       # benchmarks and repeated model experiments
+├── telemetry/        # local-host metrics collector
 ├── incident/         # compatibility incident interfaces
 ├── ingestion/        # log watching
 ├── log_generator/    # live infrastructure log simulator
