@@ -2,7 +2,7 @@
 
 > **Real-time incident intelligence for infrastructure operations**
 
-Sentinel is a local-first platform that turns live infrastructure logs into structured, evidence-backed incident intelligence. It combines deterministic rules with an Isolation Forest anomaly detector, correlates related events, reconstructs incident timelines, generates an AI-assisted narrative, persists incident state in SQLite, and presents the result through a live Streamlit operations dashboard.
+Sentinel is a local-first infrastructure incident-intelligence platform. It combines deterministic rules, an Isolation Forest anomaly detector, incident correlation, cross-signal diagnosis, AI-assisted narratives, SQLite persistence, and a live Streamlit operations dashboard. It can consume simulated incident logs and a new local-host telemetry collector for CPU, memory, and disk utilization.
 
 **Project Lead:** Madhusudhan V  
 **Team:** Madhusudhan V · Lifda Nashan · Nishmitha-Krishna · Kalpithaa
@@ -33,13 +33,15 @@ Live Infrastructure Logs
        Severity + Timeline
                   │
                   ▼
-               SQLite
+       Cross-Signal Diagnosis
                   │
                   ▼
           AI Incident Narrative
                   │
                   ▼
         Sentinel Operations UI
+
+SQLite persists incident records and review state.
 ```
 
 The system is designed around a practical operations workflow:
@@ -51,14 +53,18 @@ The system is designed around a practical operations workflow:
 5. **Correlate** related events into incidents.
 6. **Reconstruct** an evidence-backed timeline and severity.
 7. **Persist** incidents and review state in SQLite.
-8. **Generate** a grounded incident narrative.
-9. **Review** and resolve incidents through the operations dashboard.
+8. **Diagnose** cross-signal candidate explanations from related incident evidence.
+9. **Generate** a grounded incident narrative that includes the ranked hypotheses.
+10. **Review** and resolve incidents through the operations dashboard.
 
 ---
 
 ## Key features
 
-### Detection
+### Telemetry and detection
+- Synthetic scenario log generation for repeatable incident demonstrations.
+- Optional local-host CPU, memory, and disk utilization collector using psutil.
+- Actual host telemetry is clearly labelled as `host-metrics`; it describes the machine running the collector, not remote services.
 - Rule-based detection for database, network, authentication, and resource failures.
 - Isolation Forest for statistical latency/CPU anomalies.
 - Separate ML anomaly signal and actionable incident decision.
@@ -76,6 +82,54 @@ The system is designed around a practical operations workflow:
 - Local Ollama support for optional generative output.
 - Deterministic fallback when a local model is unavailable.
 - Avoids presenting an unverified root cause as confirmed fact.
+
+### Cross-signal incident diagnosis
+
+- Rule-based ranking of candidate explanations from the incident's existing log evidence.
+- Uses event ordering, available CPU/latency values, service names, and an optional configured dependency map.
+- Displays supporting evidence, a heuristic ranking score, uncertainty, and investigation checks.
+- Ranking scores are not calibrated probabilities and do not prove causation.
+- Returns an insufficient-evidence state when no supported pattern matches.
+- This first version uses signals already present in the log stream; it does not add live host telemetry, packet capture, or distributed tracing.
+- Initial controlled benchmark: 5/5 labelled synthetic scenarios matched the expected top-ranked explanation (100% top-1 and top-3 on this small test set only; not production accuracy).
+- Latest recorded CI run: 24 automated tests passed.
+
+Start real local-host metrics collection in a separate terminal:
+
+```bash
+python -m src.telemetry.host_metrics_collector --interval 2
+```
+
+Stop it with Ctrl+C. It appends CPU, memory, and disk samples to the configured log stream. Run the log generator separately for controlled synthetic incident injection.
+
+Run the controlled synthetic diagnosis benchmark with:
+
+```bash
+python -m src.evaluation.diagnosis_eval
+```
+
+The benchmark measures top-1 and top-3 ranking accuracy on five labelled synthetic scenarios. These results are controlled prototype measurements, not production accuracy.
+### Repeated training and model evaluation
+
+Sentinel includes a repeatable experiment runner that trains fresh Isolation Forest models using multiple random seeds and compares contamination settings.
+
+Quick run:
+
+```bash
+python -m src.evaluation.repeated_experiments --repeats 1 --contamination 0.05
+```
+
+Default sensitivity experiment:
+
+```bash
+python -m src.evaluation.repeated_experiments
+```
+
+Per-run metrics are saved to `experiments/results/repeated_detection_runs.csv`. The runner reports precision, recall, F1, false-positive rate, and mean/standard deviation across runs. These are controlled synthetic experiments; a separate held-out public-data evaluation remains a planned milestone.
+
+### Research plan and real-time use case
+
+See [Final-Year Project Scope and Research Plan](docs/final_year_project_plan.md) for the architecture roadmap, real-time demonstration scenario, IDS distinction, repeated-experiment design, and external validation plan.
 
 ### Persistence and operations
 - SQLite incident persistence.
@@ -146,7 +200,8 @@ src/
 ├── core/             # schemas, fusion, correlation, persistence, AI
 ├── detection/        # rule engine + anomaly detector
 ├── dashboard/        # Streamlit operations dashboard
-├── evaluation/       # reproducible benchmark
+├── evaluation/       # benchmarks and repeated model experiments
+├── telemetry/        # local-host metrics collector
 ├── incident/         # compatibility incident interfaces
 ├── ingestion/        # log watching
 ├── log_generator/    # live infrastructure log simulator

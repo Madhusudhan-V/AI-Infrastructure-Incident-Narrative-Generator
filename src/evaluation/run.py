@@ -17,12 +17,18 @@ def evaluate(
     healthy_cpu_count=100,
     rule_repeats=20,
     ml_anomaly_count=20,
+    random_state=42,
+    contamination=0.05,
 ):
-    """Evaluate rules, ML anomaly signals, and fused actionable detection."""
+    """Evaluate rules, ML anomaly signals, and fused actionable detection.
+
+    random_state and contamination are exposed so repeat experiments can
+    retrain fresh detectors and compare model stability across configurations.
+    """
     detector = InfrastructureAnomalyDetector(
         min_samples=20,
-        contamination=0.05,
-        random_state=42,
+        contamination=contamination,
+        random_state=random_state,
     )
 
     truth = []

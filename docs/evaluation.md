@@ -128,6 +128,53 @@ Important limitations:
 
 For a stronger research evaluation, future work should use labelled production-like logs, multiple workload distributions, repeated random seeds, and a held-out test set.
 
+
+## Cross-signal diagnosis evaluation
+
+The diagnosis module is evaluated separately from the existing detection benchmark because diagnosis ranking and event detection are different tasks.
+
+Run the controlled five-scenario diagnosis benchmark with:
+
+```bash
+python -m src.evaluation.diagnosis_eval
+```
+
+The scenarios cover database connection exhaustion with API latency, network connectivity failure, resource pressure, authentication failure, and latency degradation. Each scenario has a known synthetic label. The script reports:
+
+- **Top-1 accuracy:** whether the first-ranked candidate matches the scenario label.
+- **Top-3 accuracy:** whether the expected label appears within the first three candidates.
+
+### Recorded controlled result
+
+The GitHub Actions validation run reported:
+
+| Metric | Result |
+|---|---:|
+| Synthetic scenarios | 5 |
+| Top-1 diagnosis accuracy | 100% (5/5) |
+| Top-3 diagnosis accuracy | 100% (5/5) |
+| Automated test suite | 24 passed |
+
+The five scenarios are deliberately constructed around known patterns that this rule-based prototype is designed to recognize. This result confirms behavior on those five examples only; it is not evidence of generalizable diagnosis accuracy or production performance. The diagnosis score itself is a heuristic ranking score, not a probability.
+
+The test suite also checks insufficient-evidence behavior, explicit contradictory signals, and missing timestamps. Final benchmark results should be copied from a fresh run of the evaluation script and reported alongside the scenario definitions and limitations.
+
+
+## Repeated model training and sensitivity experiments
+
+Run:
+
+```bash
+python -m src.evaluation.repeated_experiments --repeats 1 --contamination 0.05
+python -m src.evaluation.repeated_experiments
+```
+
+The runner creates a fresh `InfrastructureAnomalyDetector` for each run, varies the random seed, compares configured Isolation Forest contamination settings, and writes per-run metrics to `experiments/results/repeated_detection_runs.csv`. It reports precision, recall, F1, false-positive rate, and aggregate mean/population standard deviation.
+
+This experiment is intended to expose seed sensitivity and parameter trade-offs, not to select the best run and report it alone. The existing evaluator feeds a healthy prefix before incident/anomaly examples, so this is a chronological synthetic stream evaluation rather than a fully independent train/validation/test split. Results must be described accordingly.
+
+The next generalization milestone is a held-out evaluation on a suitably labelled public log dataset such as a relevant LogHub subset. Do not claim CPU/latency multi-signal performance from a log-only dataset without corresponding metric ground truth.
+
 ## Reproducibility
 
 The benchmark can be regenerated with:
@@ -137,3 +184,8 @@ python -m src.evaluation.run
 ```
 
 The evaluation code is intentionally separate from the Streamlit dashboard so that detection experiments remain reproducible and independent of the UI.
+
+
+## Local-host telemetry smoke tests
+
+The test suite checks that local CPU/memory/disk samples are formatted into the expected event structure and that high CPU or memory samples can trigger the existing resource-pressure rule. These are unit/smoke tests using controlled metric values; they do not claim that a production incident was observed or that a resource threshold is universally correct.
