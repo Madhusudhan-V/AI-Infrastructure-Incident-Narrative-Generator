@@ -162,7 +162,9 @@ def diagnose_incident(incident, dependencies=None, top_k=3):
 
         support_events = [
             event for event, text in zip(events, event_texts)
-            if event not in direct_events and spec["support"].search(text)
+            if event not in direct_events
+            and not spec["contradiction"].search(text)
+            and spec["support"].search(text)
         ]
         contradictory_events = [
             event for event, text in zip(events, event_texts)
