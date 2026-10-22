@@ -144,7 +144,18 @@ The scenarios cover database connection exhaustion with API latency, network con
 - **Top-1 accuracy:** whether the first-ranked candidate matches the scenario label.
 - **Top-3 accuracy:** whether the expected label appears within the first three candidates.
 
-These metrics describe only the small, deliberately constructed synthetic scenario set. They must not be presented as production accuracy or generalizable real-world performance. The diagnosis score itself is a heuristic ranking score, not a probability.
+### Recorded controlled result
+
+The GitHub Actions validation run reported:
+
+| Metric | Result |
+|---|---:|
+| Synthetic scenarios | 5 |
+| Top-1 diagnosis accuracy | 100% (5/5) |
+| Top-3 diagnosis accuracy | 100% (5/5) |
+| Automated test suite | 24 passed |
+
+The five scenarios are deliberately constructed around known patterns that this rule-based prototype is designed to recognize. This result confirms behavior on those five examples only; it is not evidence of generalizable diagnosis accuracy or production performance. The diagnosis score itself is a heuristic ranking score, not a probability.
 
 The test suite also checks insufficient-evidence behavior, explicit contradictory signals, and missing timestamps. Final benchmark results should be copied from a fresh run of the evaluation script and reported alongside the scenario definitions and limitations.
 
