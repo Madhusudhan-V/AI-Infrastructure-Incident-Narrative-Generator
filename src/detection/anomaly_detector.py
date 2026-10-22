@@ -14,15 +14,32 @@ from sklearn.ensemble import IsolationForest
 
 
 def _number(pattern: str, text: str) -> Optional[float]:
+    """Extract a non-negative numeric metric, if present."""
     match = re.search(pattern, text, re.IGNORECASE)
-    return float(match.group(1)) if match else None
+    if not match:
+        return None
+
+    value = float(match.group(1))
+    return value if np.isfinite(value) and value >= 0 else None
 
 
 def extract_features(event):
-    """Return [latency_ms, cpu_pct] when either metric is present."""
-    message = getattr(event, "message", "") or event.get("message", "")
-    latency = _number(r"latency_ms=(\d+(?:\.\d+)?)", message)
-    cpu = _number(r"cpu_pct=(\d+(?:\.\d+)?)", message)
+    """Return [latency_ms, cpu_pct] when either valid metric is present.
+
+    Both dictionary-based events and objects with a message attribute are
+    supported. Missing, non-text, negative, and non-finite values are ignored
+    rather than being converted into misleading numeric features.
+    """
+    if isinstance(event, dict):
+        message = event.get("message", "")
+    else:
+        message = getattr(event, "message", "")
+
+    if not isinstance(message, str) or not message:
+        return None
+
+    latency = _number(r"\blatency_ms\s*=\s*(-?\d+(?:\.\d+)?)\b", message)
+    cpu = _number(r"\bcpu_pct\s*=\s*(-?\d+(?:\.\d+)?)\b", message)
 
     if latency is None and cpu is None:
         return None
@@ -42,6 +59,13 @@ class InfrastructureAnomalyDetector:
     """Online-style rolling Isolation Forest with metric-aware baselines."""
 
     def __init__(self, window=100, min_samples=20, contamination=0.05, random_state=42):
+        if window < 1:
+            raise ValueError("window must be at least 1")
+        if min_samples < 2:
+            raise ValueError("min_samples must be at least 2")
+        if not 0.0 < contamination <= 0.5:
+            raise ValueError("contamination must be greater than 0 and at most 0.5")
+
         self.window = window
         self.min_samples = min_samples
         self.contamination = contamination
@@ -96,13 +120,11 @@ class InfrastructureAnomalyDetector:
         raw_score = float(model.decision_function([values])[0])
         anomaly = prediction == -1
 
-        # Convert the signed decision score into a bounded anomaly score.
-        # This is a confidence-like score, not a probability.
+        # This transformed decision score is not a calibrated probability.
         score = max(0.0, min(1.0, 0.5 - raw_score))
 
         # Only healthy, non-error, non-anomalous observations update the
-        # baseline. The candidate itself must never train the model before
-        # being scored, and anomalies are deliberately excluded from it.
+        # baseline. The candidate itself is scored before any update.
         if severity < 2 and not anomaly:
             samples.append(values)
 
