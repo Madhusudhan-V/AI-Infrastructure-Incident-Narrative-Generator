@@ -90,3 +90,48 @@ def test_authentication_failure_is_not_mislabeled_as_database_failure():
     result = diagnose_incident(incident)
 
     assert result["candidates"][0]["key"] == "authentication_failure"
+
+
+def test_explicit_contradiction_reduces_candidate_score():
+    base_events = [
+        {
+            "timestamp": "2026-09-20T10:02:01+00:00",
+            "service": "database",
+            "message": "Connection pool exhausted active=50 max=50",
+        },
+        {
+            "timestamp": "2026-09-20T10:02:04+00:00",
+            "service": "api-service",
+            "message": "Request completed latency_ms=900",
+        },
+    ]
+    contradicted_events = base_events + [
+        {
+            "timestamp": "2026-09-20T10:02:06+00:00",
+            "service": "database",
+            "message": "Database healthy and connections normal",
+        }
+    ]
+
+    base = diagnose_incident({"events": base_events})
+    contradicted = diagnose_incident({"events": contradicted_events})
+    base_candidate = next(
+        c for c in base["candidates"] if c["key"] == "database_connection_exhaustion"
+    )
+    contradicted_candidate = next(
+        c for c in contradicted["candidates"] if c["key"] == "database_connection_exhaustion"
+    )
+
+    assert contradicted_candidate["contradictory_evidence"]
+    assert contradicted_candidate["ranking_score"] < base_candidate["ranking_score"]
+
+
+def test_missing_timestamps_do_not_crash_diagnosis():
+    result = diagnose_incident({
+        "events": [
+            {"service": "database", "message": "Connection pool exhausted"},
+            {"timestamp": "2026-09-20T10:02:04+00:00", "service": "api-service", "message": "Slow response"},
+        ]
+    })
+
+    assert result["status"] == "ranked_hypotheses"
