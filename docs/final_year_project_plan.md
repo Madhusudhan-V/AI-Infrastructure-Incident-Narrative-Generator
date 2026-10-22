@@ -29,7 +29,7 @@ Sentinel is **not a replacement for an IDS**. It does not currently capture pack
 9. **Experiment pipeline:** rerun training/evaluation with different seeds and hyperparameters; store per-run results and aggregate mean/variation.
 10. **Reproducible validation:** automated tests, controlled fault scenarios, documented limitations, and a held-out public log evaluation.
 
-The current repository has the core rule/ML detector, incident correlation, dashboard, persistence, synthetic log generator, and an initial rule-based diagnosis module. The repeated experiment runner is an incremental evaluation feature. Real host telemetry, external dataset evaluation, and stronger learned diagnosis are still future milestones.
+The current repository has the core rule/ML detector, incident correlation, dashboard, persistence, synthetic log generator, an initial rule-based diagnosis module, a repeated experiment runner, and a local-host CPU/memory/disk collector. The collector reports the machine running it; remote service telemetry, external dataset evaluation, and stronger learned diagnosis remain future milestones.
 
 ## 4. Repeated training, testing, and improvement loop
 
@@ -109,9 +109,11 @@ OpenTelemetry's demo is a possible later integration target for a more realistic
 - Record mean and standard deviation, not just the best run.
 
 ### Milestone C — Real signal ingestion
-- Add a local-host metrics collector for CPU, memory, and disk where supported.
-- Keep synthetic scenarios available for reproducible testing.
-- Mark simulated and actual signals clearly in the UI.
+- [x] Add a local-host metrics collector for CPU, memory, and disk using psutil.
+- [x] Append real host measurements to the existing log stream in the parser's expected format.
+- [x] Add tests for metric formatting, parser integration, and high resource utilization.
+- [ ] Keep validating behavior on macOS/Linux and clearly distinguish local-host telemetry from simulated remote-service events.
+- [ ] Consider remote/container metrics only after the local collector is stable.
 
 ### Milestone D — Diagnosis evaluation
 - Expand labelled fault scenarios and include negative/ambiguous cases.
