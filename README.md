@@ -88,6 +88,8 @@ The system is designed around a practical operations workflow:
 - Ranking scores are not calibrated probabilities and do not prove causation.
 - Returns an insufficient-evidence state when no supported pattern matches.
 - This first version uses signals already present in the log stream; it does not add live host telemetry, packet capture, or distributed tracing.
+- Initial controlled benchmark: 5/5 labelled synthetic scenarios matched the expected top-ranked explanation (100% top-1 and top-3 on this small test set only; not production accuracy).
+- Latest recorded CI run: 24 automated tests passed.
 
 Run the controlled synthetic diagnosis benchmark with:
 
