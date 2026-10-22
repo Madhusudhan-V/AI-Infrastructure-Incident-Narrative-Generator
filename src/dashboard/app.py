@@ -20,7 +20,7 @@ from src.log_generator.live_log_generator import inject_incident
 ROOT = Path(__file__).resolve().parents[2]
 LOG = Path(os.getenv("SENTINEL_LOG_PATH", str(ROOT / "data/runtime/application.log")))
 load_dotenv(ROOT / ".env")
-DB = os.getenv("DATABASE_PATH", str(ROOT / "data/runtime/incidents.db"))
+DB = os.getenv("DATABASE_PATH", str(ROOT / "data/runtime/sentinel_demo.db"))
 init(DB)
 
 st.set_page_config(page_title="Sentinel Incident Center", page_icon="S", layout="wide")
@@ -203,16 +203,40 @@ st.markdown("""
 
 if "engine" not in st.session_state:
     st.session_state.engine = IncidentEngine()
-    st.session_state.engine.restore(load(DB))
+    persisted_incidents = load(DB)
+    st.session_state.engine.restore(persisted_incidents)
     st.session_state.events = []
     st.session_state.anomaly_detector = InfrastructureAnomalyDetector()
     st.session_state.anomalies = []
 
+    # Hydrate the visible event stream and detector from the current log file.
+    # Use a dedicated demo database by default so unrelated historical benchmark
+    # records do not appear as hundreds of live incidents in the presentation.
     existing_lines = LOG.read_text(encoding="utf-8").splitlines() if LOG.exists() else []
+    historical_events = []
     for historical_line in existing_lines:
         historical_event = parse_and_detect(historical_line)
         if historical_event:
-            st.session_state.anomaly_detector.update(historical_event)
+            ml_result = st.session_state.anomaly_detector.update(historical_event)
+            historical_event = fuse(historical_event, ml_result)
+            historical_events.append(historical_event)
+            if ml_result["available"] and ml_result["anomaly"]:
+                st.session_state.anomalies.append({
+                    "timestamp": historical_event.timestamp,
+                    "service": historical_event.service,
+                    "score": round(ml_result["score"], 3),
+                    "promoted": bool(historical_event.ml_anomaly and historical_event.severity >= 2),
+                    "features": ml_result["features"],
+                })
+
+    st.session_state.events = historical_events
+    # Build incident history from the log only when this demo database is new.
+    # Existing persisted review states must never be duplicated on a dashboard restart.
+    if not persisted_incidents:
+        for historical_event in historical_events:
+            result = st.session_state.engine.add(historical_event)
+            if result:
+                save(DB, result[0])
     st.session_state.seen = len(existing_lines)
 
 with st.sidebar:
