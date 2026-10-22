@@ -18,6 +18,7 @@ def test_metric_line_is_parseable_and_contains_all_host_signals():
     assert "memory_pct=42.5%" in event.message
     assert "disk_pct=71.0%" in event.message
     assert event.detected is True
+    assert event.severity >= 2
     assert event.incident_type == "resource_pressure"
 
 
