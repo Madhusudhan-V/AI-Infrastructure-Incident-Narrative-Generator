@@ -51,8 +51,9 @@ The system is designed around a practical operations workflow:
 5. **Correlate** related events into incidents.
 6. **Reconstruct** an evidence-backed timeline and severity.
 7. **Persist** incidents and review state in SQLite.
-8. **Generate** a grounded incident narrative.
-9. **Review** and resolve incidents through the operations dashboard.
+8. **Diagnose** cross-signal candidate explanations from related incident evidence.
+9. **Generate** a grounded incident narrative that includes the ranked hypotheses.
+10. **Review** and resolve incidents through the operations dashboard.
 
 ---
 
@@ -77,6 +78,22 @@ The system is designed around a practical operations workflow:
 - Deterministic fallback when a local model is unavailable.
 - Avoids presenting an unverified root cause as confirmed fact.
 
+### Cross-signal incident diagnosis
+
+- Rule-based ranking of candidate explanations from the incident's existing log evidence.
+- Uses event ordering, available CPU/latency values, service names, and an optional configured dependency map.
+- Displays supporting evidence, a heuristic ranking score, uncertainty, and investigation checks.
+- Ranking scores are not calibrated probabilities and do not prove causation.
+- Returns an insufficient-evidence state when no supported pattern matches.
+- This first version uses signals already present in the log stream; it does not add live host telemetry, packet capture, or distributed tracing.
+
+Run the controlled synthetic diagnosis benchmark with:
+
+```bash
+python -m src.evaluation.diagnosis_eval
+```
+
+The benchmark measures top-1 and top-3 ranking accuracy on five labelled synthetic scenarios. These results are controlled prototype measurements, not production accuracy.
 ### Persistence and operations
 - SQLite incident persistence.
 - Dashboard recovery after restart.
