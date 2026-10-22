@@ -18,7 +18,7 @@ from src.core.storage import init, load, save
 from src.log_generator.live_log_generator import inject_incident
 
 ROOT = Path(__file__).resolve().parents[2]
-LOG = ROOT / "data/sample_logs/application.log"
+LOG = Path(os.getenv("SENTINEL_LOG_PATH", str(ROOT / "data/runtime/application.log")))
 load_dotenv(ROOT / ".env")
 DB = os.getenv("DATABASE_PATH", str(ROOT / "data/runtime/incidents.db"))
 init(DB)
