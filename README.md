@@ -98,6 +98,28 @@ python -m src.evaluation.diagnosis_eval
 ```
 
 The benchmark measures top-1 and top-3 ranking accuracy on five labelled synthetic scenarios. These results are controlled prototype measurements, not production accuracy.
+### Repeated training and model evaluation
+
+Sentinel includes a repeatable experiment runner that trains fresh Isolation Forest models using multiple random seeds and compares contamination settings.
+
+Quick run:
+
+```bash
+python -m src.evaluation.repeated_experiments --repeats 1 --contamination 0.05
+```
+
+Default sensitivity experiment:
+
+```bash
+python -m src.evaluation.repeated_experiments
+```
+
+Per-run metrics are saved to `experiments/results/repeated_detection_runs.csv`. The runner reports precision, recall, F1, false-positive rate, and mean/standard deviation across runs. These are controlled synthetic experiments; a separate held-out public-data evaluation remains a planned milestone.
+
+### Research plan and real-time use case
+
+See [Final-Year Project Scope and Research Plan](docs/final_year_project_plan.md) for the architecture roadmap, real-time demonstration scenario, IDS distinction, repeated-experiment design, and external validation plan.
+
 ### Persistence and operations
 - SQLite incident persistence.
 - Dashboard recovery after restart.
@@ -167,7 +189,7 @@ src/
 ├── core/             # schemas, fusion, correlation, persistence, AI
 ├── detection/        # rule engine + anomaly detector
 ├── dashboard/        # Streamlit operations dashboard
-├── evaluation/       # reproducible benchmark
+├── evaluation/       # benchmarks and repeated model experiments
 ├── incident/         # compatibility incident interfaces
 ├── ingestion/        # log watching
 ├── log_generator/    # live infrastructure log simulator
