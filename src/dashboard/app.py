@@ -8,6 +8,7 @@ import streamlit as st
 from dotenv import load_dotenv
 
 from src.core.ai import generate
+from src.core.cross_signal_diagnosis import diagnose_incident
 from src.core.detection_fusion import fuse
 from src.detection.anomaly_detector import InfrastructureAnomalyDetector
 from src.core.detector import parse_and_detect
@@ -330,8 +331,8 @@ def live_control_room():
             f'Duration: {timeline["duration_seconds"]}s'
         )
 
-        t1, t2, t3, t4 = st.tabs([
-            "TIMELINE", "AI NARRATIVE", "ANALYTICS", "RAW EVIDENCE"
+        t1, t2, t3, t4, t5 = st.tabs([
+            "TIMELINE", "CROSS-SIGNAL DIAGNOSIS", "AI NARRATIVE", "ANALYTICS", "RAW EVIDENCE"
         ])
 
         with t1:
@@ -350,13 +351,49 @@ def live_control_room():
                     unsafe_allow_html=True,
                 )
 
+        diagnosis = diagnose_incident(incident)
+
         with t2:
-            st.markdown(generate(incident))
-            st.caption(
-                "AI output is grounded in observed evidence; verify operational conclusions."
-            )
+            st.markdown("**RANKED CANDIDATE EXPLANATIONS**")
+            st.caption(diagnosis["ranking_note"])
+            st.info(diagnosis["summary"])
+            if diagnosis["candidates"]:
+                for index, candidate in enumerate(diagnosis["candidates"], start=1):
+                    with st.expander(
+                        f'{index}. {candidate["hypothesis"]} · evidence score {candidate["ranking_score"]}/100',
+                        expanded=(index == 1),
+                    ):
+                        st.caption(candidate["score_interpretation"])
+                        st.markdown("**Supporting evidence**")
+                        for evidence in candidate["supporting_evidence"]:
+                            st.markdown(
+                                f'- {evidence["timestamp"]} · **{evidence["service"]}** · '
+                                f'{evidence["message"]} · _{evidence["role"]}_'
+                            )
+                        if candidate["contradictory_evidence"]:
+                            st.markdown("**Potentially contradictory evidence**")
+                            for evidence in candidate["contradictory_evidence"]:
+                                st.markdown(f'- {evidence}')
+                        st.markdown("**Uncertainty**")
+                        st.write(candidate["uncertainty"])
+                        st.markdown("**Suggested investigation checks**")
+                        for check in candidate["next_checks"]:
+                            st.markdown(f"- {check}")
+                        st.caption(candidate["dependency_context"])
+            else:
+                st.warning(
+                    "There is not enough matching evidence to rank a supported explanation. "
+                    "Collect more signals instead of inferring a cause."
+                )
 
         with t3:
+            st.markdown(generate(incident, diagnosis=diagnosis))
+            st.caption(
+                "Candidate explanations are evidence-ranked hypotheses, not confirmed causes. "
+                "Verify operational conclusions before acting."
+            )
+
+        with t4:
             x, y, z = st.columns(3)
             x.metric("EVENTS", len(incident["events"]))
             y.metric(
@@ -382,7 +419,7 @@ def live_control_room():
                 use_container_width=True,
             )
 
-        with t4:
+        with t5:
             st.json(incident)
 
         st.markdown('<div class="section-label">INCIDENT COMMANDER REVIEW</div>', unsafe_allow_html=True)
