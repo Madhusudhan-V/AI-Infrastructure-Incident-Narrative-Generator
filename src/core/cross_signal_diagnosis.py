@@ -50,7 +50,7 @@ PATTERNS = {
         "label": "Resource pressure",
         "direct": re.compile(
             r"out of memory|oom killed|memory pressure|cpu pressure|"
-            r"high cpu|resource exhausted|cpu_pct\s*[=:]\s*(?:8[5-9]|9\d|100)(?:\.\d+)?",
+            r"high cpu|resource exhausted|cpu_pct\s*[=:]\s*(?:8[5-9]|9\d|100)(?:\.\d+)?|memory_pct\s*[=:]\s*(?:8[5-9]|9\d|100)(?:\.\d+)?",
             re.I,
         ),
         "support": re.compile(r"cpu|memory|resource|worker|latency_ms", re.I),
