@@ -20,6 +20,8 @@ def parse_and_detect(line:str):
     for kind,patterns in RULES.items():
         if any(re.search(p,low) for p in patterns): matches.append(kind)
     sev=SEVERITY.get(level.upper(),0)
+    if matches:
+        sev=max(sev,2)
     detected=sev>=2 or bool(matches)
     confidence=min(0.50 + .12*len(matches) + .10*max(sev-1,0),.99) if detected else 0
     return Event(timestamp,level.upper(),service,message,line,detected,matches[0] if matches else None,sev,confidence,matches)
