@@ -41,7 +41,7 @@ Live Infrastructure Logs
                   ▼
         Sentinel Operations UI
 
-SQLite persists incident records and review state.
+SQLite persists incident records and review state. The dashboard uses `data/runtime/sentinel_demo.db` by default to keep the live demo separate from older benchmark/demo databases; set `DATABASE_PATH` to override it.
 ```
 
 The system is designed around a practical operations workflow:
