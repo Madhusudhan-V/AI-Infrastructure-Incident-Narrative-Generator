@@ -8,7 +8,7 @@ RULES={
  "network_failure":[r"connection refused",r"connection reset",r"network unreachable"],
  "latency_degradation":[r"latency increased",r"timeout",r"response time"],
  "authentication_failure":[r"authentication failed",r"invalid token",r"unauthorized"],
- "resource_pressure":[r"out of memory",r"oom",r"cpu usage.*(9[0-9]|100)",r"disk.*(9[0-9]|100)%"],
+ "resource_pressure":[r"out of memory",r"oom",r"cpu usage.*(9[0-9]|100)",r"memory_pct=(9[0-9]|100)(?:\.\d+)?%",r"disk_pct=(9[0-9]|100)(?:\.\d+)?%"],
 }
 
 def parse_and_detect(line:str):
