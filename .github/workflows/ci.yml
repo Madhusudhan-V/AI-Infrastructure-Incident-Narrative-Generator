@@ -23,9 +23,5 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-      - name: Run automated tests
-        run: python -m pytest -q
-      - name: Run existing detection benchmark
-        run: python -m src.evaluation.run
-      - name: Run cross-signal diagnosis benchmark
-        run: python -m src.evaluation.diagnosis_eval
+      - name: Run final validation pipeline
+        run: python -m src.evaluation.final_validation --output-dir /tmp/sentinel-final-validation
