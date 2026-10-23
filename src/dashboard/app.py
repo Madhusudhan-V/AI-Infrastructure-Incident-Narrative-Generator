@@ -59,11 +59,39 @@ st.markdown("""
 }
 
 [data-testid="stMetric"] {
-    background: linear-gradient(180deg, rgba(20,28,41,.92), rgba(14,20,30,.92));
-    border: 1px solid var(--border);
+    background: linear-gradient(145deg, rgba(22,32,48,.96), rgba(12,18,28,.96));
+    border: 1px solid #2b3a50;
+    border-radius: 16px;
+    padding: 1.05rem 1.1rem;
+    min-height: 112px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.14);
+    transition: border-color .18s ease, transform .18s ease;
+}
+[data-testid="stMetric"]:hover {
+    border-color: #536a89;
+    transform: translateY(-1px);
+}
+[data-testid="stMetricDelta"] { font-size: .78rem !important; }
+[data-testid="stTabs"] { margin-top: .35rem; }
+[data-testid="stExpander"] {
+    border: 1px solid #26364b;
+    border-radius: 12px;
+    background: rgba(15,22,33,.72);
+}
+div[data-testid="stAlert"] { border-radius: 12px; }
+div[data-testid="stButton"] > button {
+    border-radius: 10px;
+    font-weight: 650;
+    min-height: 2.65rem;
+}
+div[data-testid="stSelectbox"] > div > div {
+    border-radius: 10px;
+}
+[data-testid="stPlotlyChart"] {
+    border: 1px solid #202d40;
     border-radius: 14px;
-    padding: 1rem 1.05rem;
-    min-height: 104px;
+    padding: .4rem;
+    background: rgba(12,18,28,.55);
 }
 
 [data-testid="stMetricLabel"] {
@@ -195,9 +223,14 @@ footer {visibility: hidden;}
 
 st.markdown("""
 <div class="hero">
-    <div class="hero-kicker">SENTINEL / INCIDENT OPERATIONS</div>
+    <div class="hero-kicker">SENTINEL AI &nbsp; / &nbsp; INCIDENT OPERATIONS</div>
     <h1>Incident Intelligence Center</h1>
-    <p>Live infrastructure observability · detection · correlation · AI-assisted incident analysis</p>
+    <p>Infrastructure observability, explainable detection, incident correlation and AI-assisted investigation.</p>
+    <div style="display:flex;flex-wrap:wrap;gap:.55rem;margin-top:1.15rem">
+      <span style="border:1px solid #31445e;border-radius:999px;padding:.32rem .7rem;color:#b6c7dc;font-size:.75rem">● LIVE LOG INGESTION</span>
+      <span style="border:1px solid #31445e;border-radius:999px;padding:.32rem .7rem;color:#b6c7dc;font-size:.75rem">RULES + ISOLATION FOREST</span>
+      <span style="border:1px solid #31445e;border-radius:999px;padding:.32rem .7rem;color:#b6c7dc;font-size:.75rem">EVIDENCE-LED DIAGNOSIS</span>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -304,11 +337,11 @@ def live_control_room():
     left, right = st.columns([1.35, 0.65])
 
     with left:
-        st.markdown('<div class="section-label">LIVE EVENT STREAM</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-label">01 / LIVE EVENT STREAM</div>', unsafe_allow_html=True)
         st.code("\n".join(lines[-28:]) or "Waiting for logs...", language="text")
 
     with right:
-        st.markdown('<div class="section-label">DETECTION ANALYTICS</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-label">02 / DETECTION ANALYTICS</div>', unsafe_allow_html=True)
         if events:
             df = pd.DataFrame([
                 {"type": e.incident_type or "normal", "severity": e.severity}
@@ -325,7 +358,7 @@ def live_control_room():
 
     if st.session_state.anomalies:
         st.divider()
-        st.markdown('<div class="section-label">ML ANOMALY SIGNALS</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-label">03 / ML ANOMALY SIGNALS</div>', unsafe_allow_html=True)
         st.dataframe(
             pd.DataFrame(st.session_state.anomalies[-10:]),
             hide_index=True,
@@ -333,7 +366,7 @@ def live_control_room():
         )
 
     if incidents:
-        incident = incidents[-1]
+        incident = active[-1] if active else incidents[-1]
         timeline = build_timeline(incident)
 
         st.divider()
